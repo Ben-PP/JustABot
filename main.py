@@ -22,7 +22,7 @@ async def on_message(message):
         await help.help(message)
     
     if message.content.startswith("!roles"):
-        await Roles.roles(message)
+        await Roles.roles(message, client)
     
     if message.content.startswith("!embed"):
         await Messages.embed(message)
