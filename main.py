@@ -1,22 +1,30 @@
 import discord
 from decouple import config
 
+import help
+from roles import Roles
+from messages import Messages
+
 client = discord.Client()
-TOKEN = config('TOKEN')
+BOT_TOKEN = config('BOT_TOKEN')
 
 @client.event
 async def on_ready():
     print('we have logged in as {0.user}'.format(client))
 
+#Listens on events on the server
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
+
+    if message.content.startswith("!help"):
+        await help.help(message)
     
-    if message.content.startswith('!hello'):
-        await message.channel.send('Hello user!')
+    if message.content.startswith("!roles"):
+        await Roles.roles(message)
     
-    if message.content.startswith('!How are you?'):
-        await message.channel.send('I am fine thanks!')
+    if message.content.startswith("!embed"):
+        await Messages.embed(message)
     
-client.run(TOKEN)
+client.run(BOT_TOKEN)
