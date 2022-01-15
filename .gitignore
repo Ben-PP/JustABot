@@ -1,2 +1,5 @@
 .env
 __pycache__/
+
+#Include folder for databases but not the databases.
+databases/*.db
