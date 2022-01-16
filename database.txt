@@ -1,0 +1,15 @@
+Each guild(Discord server) gets its own .db file
+
+In the .db file there will always bee following tables:
+    'active_messages'
+
+'active_messages'
+name    |   active_channel_id   | active_message_id
+'roles' |   discordchannelid    | discordmessageid      #This is created when '!roles set' is sent succesfully.
+
+Following tables are added as needed:
+	'(thiswillbemessageid)'	#Messageid is set on numbers for example '04944938387340903'
+	
+'(thiswillbemessageid)'
+emoji	|	role_id	
+🔥	|	discordroleid		#emoji needs to be unicode emoji
