@@ -35,18 +35,18 @@ async def help_roles(message):
         "description":"You can use me to manage different roles on the server.\nPut these commands after !roles",
         "fields":[
             {
-                "name":"channel",
-                "value":"Sets the channel as active.\n'**!roles channel #channel-name**'",
-                "inline":True
-            },
-            {
-                "name":"message",
-                "value":"Sets the message as active.\n'**!roles message messageid**'",
+                "name":"set",
+                "value":"Sets the channel and message as active.\n'!roles set #channel messageid'",
                 "inline":True
             },
             {
                 "name":"add",
-                "value":"Adds reaction to message and\nconnects a role to it which is\nassigned to everyone who\nwho reacts with it.\n'**!roles add :emoji: @role**'",
+                "value":"Adds reaction to message and connects a role to it which is assigned to everyone who reacts with it.\n'!roles add :emoji: @role'",
+                "inline":True
+            },
+            {
+                "name":"remove",
+                "value":"Remoces reaction from message and connection to a role.\n'!roles remove :emoji:'",
                 "inline":True
             }
         ]
