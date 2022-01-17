@@ -3,5 +3,4 @@ __pycache__/
 dist/
 build/
 main.spec
-TODO.txt
 databases/
