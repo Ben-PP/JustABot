@@ -3,6 +3,7 @@ import ast
 
 import help
 
+#TODO: Make the messages sent modifiable
 #Things to make the bot send messages
 class Messages:
 

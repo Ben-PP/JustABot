@@ -1,6 +1,7 @@
 import sqlite3
 import discord
 from decouple import config
+import os
 
 import help
 from roles import Roles
@@ -11,8 +12,16 @@ intents.members = True
 client = discord.Client(intents=intents)
 BOT_TOKEN = config('BOT_TOKEN')
 
+command_key = "!"
+
+if not(os.path.isdir("./databases")):
+            os.mkdir("./databases")
+
 @client.event
 async def on_ready():
+    if client.user.id == 932540671988998234:
+        global command_key
+        command_key = "?"
     print('we have logged in as {0.user}'.format(client))
     #TODO: Do clean up for all the databases.
     #Check for any guilds that do not exist anymore.
@@ -24,18 +33,18 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.startswith("!help"):
+    if message.content.startswith(command_key+"help"):
         await help.help(message)
         return
 
-    if message.content.startswith("!roles"):
+    if message.content.startswith(command_key+"roles"):
         await Roles.roles(message)
         return
 
-    if message.content.startswith("!embed"):
+    if message.content.startswith(command_key+"embed"):
         await Messages.embed(message)
         return
-    if message.content.startswith("!print"):
+    if message.content.startswith(command_key+"print"):
         db = sqlite3.connect("databases/"+str(message.guild.id)+".db")
         cursor = db.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")

@@ -57,7 +57,7 @@ async def help_roles(message):
 async def help_embed(message):
     content = {
         "title":"Embed",
-        "description":"With this you can send embedded message.\nSyntax for content is:\n{\n\"title\":\"Your title\",\n\"description\":\"Your description\",\n\"fields\": [\n{\n\"name\":\"Field name\",\n\"value\":\"Field value\",\n\"inline\":True/False\n}\n]\n}",
+        "description":"With this you can send embedded message.\n!embed\nSyntax for content is:\n{\n\"title\":\"Your title\",\n\"description\":\"Your description\",\n\"fields\": [\n{\n\"name\":\"Field name\",\n\"value\":\"Field value\",\n\"inline\":True\n}\n]\n}",
         "fields":[
             {
                 "name":"Fields",

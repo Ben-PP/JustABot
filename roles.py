@@ -14,7 +14,7 @@ class Roles:
     #Default method called when user writes message that starts with '!roles'.
     #Here the message is also split and searched for further commands.
     async def roles(message):
-
+        
         #Checks if the db is used by another command and waits for it to finnish
         dbname = "databases/"+str(+message.guild.id)+".db"
         Roles.db = sqlite3.connect(dbname)
