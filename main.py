@@ -1,29 +1,52 @@
+from ast import Global
+import access
+from pyexpat.errors import messages
 import sqlite3
 import discord
 from decouple import config
-import os
 
 import help
-from roles import Roles
-from messages import Messages
+import roles
+import messages
+import checkdb
 
 intents = discord.Intents.default()
 intents.members = True
 client = discord.Client(intents=intents)
 BOT_TOKEN = config('BOT_TOKEN')
+is_experimental = False
 
-command_key = "!"
+command_key = "!"           #What the bot uses to recognize commands
 
-if not(os.path.isdir("./databases")):
-            os.mkdir("./databases")
+checkdb.check_db_folder()
 
 @client.event
 async def on_ready():
-    if client.user.id == 932540671988998234:
+    #checks if the bot is experimental version.
+    print("Checking for experimental...")
+    if client.user.id == 932540671988998234: #Replace this with bot id that is the experimental bot
+        global is_experimental
+        is_experimental = True
         global command_key
         command_key = "?"
+        print("Experimental bot. Command key is '"+command_key+"'")
+    else:
+        print("Normal bot. Command key is '"+command_key+"'")
+    print("=========================================================")
+    
+    #Check and set up the databases
+    print("Checking databases...")
+    for guild in client.guilds:
+        print("----------------------------------------")
+        checkdb.check_tables(guild)
+        await checkdb.clean_up(guild, is_experimental)
+
+    print("All databases ok!")
+    print("=========================================================")
+
+    
+
     print('we have logged in as {0.user}'.format(client))
-    #TODO: Do clean up for all the databases.
     #Check for any guilds that do not exist anymore.
     #Check for any messages that do not exist anymore.
 
@@ -38,38 +61,59 @@ async def on_message(message):
         return
 
     if message.content.startswith(command_key+"roles"):
-        await Roles.roles(message)
+        if access.authorize(message, "trusted"):
+            await roles.roles(message)
         return
 
     if message.content.startswith(command_key+"embed"):
-        await Messages.embed(message)
+        await messages.embed(message)
         return
-    if message.content.startswith(command_key+"print"):
+    if message.content.startswith(command_key+"access"):
+        if access.authorize(message, "owner"):
+            await access.access(message)
+        return
+    if message.content.startswith(command_key+"trusted"):
+        if access.authorize(message, "trusted"):
+            print("Is trusted")
+        else:
+            print("Is not trusted")
+    if is_experimental and message.content.startswith(command_key+"print"):
         db = sqlite3.connect("databases/"+str(message.guild.id)+".db")
         cursor = db.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = cursor.fetchall()
-        print(tables)
+        print("Tables in the database")
+        print("======================================")
+        print(str(tables))
         print("======================================")
         for table in tables:
-            print(str(table))
+            print(str(table[0]))
             cursor.execute("SELECT * FROM '"+table[0]+"'")
             print(cursor.fetchall())
             print("________________________________")
+        #FIXME: Print for access level table
         db.close()
+
+@client.event
+async def on_raw_message_delete(payload):
+    messages.message_deleted(payload)
 
 @client.event
 async def on_raw_reaction_add(payload):
     bot_id = client.user.id
     if bot_id == payload.user_id:
         return
-    await Roles.set_role(payload, client)
+    await roles.set_role(payload, client)
 
 @client.event
 async def on_raw_reaction_remove(payload):
     bot_id = client.user.id
     if bot_id == payload.user_id:
         return
-    await Roles.remove_role(payload, client)
+    await roles.remove_role(payload, client)
+
+@client.event
+async def on_guild_remove(guild):
+    pass #FIXME: Delete guilds database
     
 client.run(BOT_TOKEN)
