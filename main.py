@@ -6,9 +6,10 @@ import discord
 from decouple import config
 
 import help
-import roles
+from roles import Roles
 import messages
 import checkdb
+import authorization
 
 intents = discord.Intents.default()
 intents.members = True
@@ -61,19 +62,19 @@ async def on_message(message):
         return
 
     if message.content.startswith(command_key+"roles"):
-        if access.authorize(message, "trusted"):
-            await roles.roles(message)
+        if authorization.authorize(message, "trusted"):
+            await Roles.roles(message)
         return
 
     if message.content.startswith(command_key+"embed"):
         await messages.embed(message)
         return
     if message.content.startswith(command_key+"access"):
-        if access.authorize(message, "owner"):
+        if authorization.authorize(message, "owner"):
             await access.access(message)
         return
     if message.content.startswith(command_key+"trusted"):
-        if access.authorize(message, "trusted"):
+        if authorization.authorize(message, "trusted"):
             print("Is trusted")
         else:
             print("Is not trusted")
@@ -91,7 +92,6 @@ async def on_message(message):
             cursor.execute("SELECT * FROM '"+table[0]+"'")
             print(cursor.fetchall())
             print("________________________________")
-        #FIXME: Print for access level table
         db.close()
 
 @client.event
@@ -103,17 +103,13 @@ async def on_raw_reaction_add(payload):
     bot_id = client.user.id
     if bot_id == payload.user_id:
         return
-    await roles.set_role(payload, client)
+    await Roles.set_role(payload, client)
 
 @client.event
 async def on_raw_reaction_remove(payload):
     bot_id = client.user.id
     if bot_id == payload.user_id:
         return
-    await roles.remove_role(payload, client)
-
-@client.event
-async def on_guild_remove(guild):
-    pass #FIXME: Delete guilds database
+    await Roles.remove_role(payload, client)
     
 client.run(BOT_TOKEN)
