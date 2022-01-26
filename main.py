@@ -49,7 +49,6 @@ async def on_ready():
     
 
     print('we have logged in as {0.user}'.format(client))
-    #Check for any guilds that do not exist anymore.
     #Check for any messages that do not exist anymore.
 
 #Listens on events on the server.

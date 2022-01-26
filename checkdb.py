@@ -1,11 +1,11 @@
-from multiprocessing import cpu_count
 import sqlite3
 import os
 from timeit import default_timer as timer
 
-from on_delete import guild_deleted
+import database.remove_channel as remove_channel
 
 def checkdb(client, is_experimental):
+    #Check for deleted guilds
     print("Checking for deleted guilds...")
     files = os.listdir("databases/")
     guilds = client.guilds
@@ -32,6 +32,7 @@ def check_db_folder():
     if not(os.path.isdir("./databases")):
         os.mkdir("./databases")
 
+#Checks for needed tables and creates them if needed.
 def check_tables(guild):
     print("Checking tables of guild: "+str(guild.id))
     dbname = "databases/"+str(guild.id)+".db"
@@ -47,7 +48,7 @@ def check_tables(guild):
         channel_id integer
     )""")
     cursor.execute("""CREATE TABLE IF NOT EXISTS embedded_messages (
-        message_id integer NOT NULL PRIMARY KEY,
+        embed_message_id integer NOT NULL PRIMARY KEY,
         embed_channel_id integer,
         sent_message_id integer,
         sent_channel_id integer
@@ -56,6 +57,10 @@ def check_tables(guild):
         role_id integer NOT NULL PRIMARY KEY,
         is_admin text,
         is_trusted text
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS used_messages (
+        message_id integer NOT NULL PRIMARY KEY,
+        channel_id integer
     )""")
     print("Tables ok!")
     db.commit()
@@ -69,29 +74,26 @@ def clean_up(guild, is_experimental):
 
     print("Clean up started...")
 
-    #Clean up for reaction_role_messages
-    cursor.execute("SELECT * FROM reaction_role_messages")
-    messages = cursor.fetchall()
-    for message in messages:
-        #If channel has been deleted
-        ch = guild.get_channel(message[1])
-        if ch == None:
-            cursor.execute("DELETE FROM reaction_role_messages WHERE channel_id='"+str(message[1])+"'")
-            cursor.execute("DROP TABLE '"+str(message[0])+"'")
-            print("No channel found, all messages removed from this channel.")
     #Put here all time consuming clean ups that will be run in the production version.
     #These are not needed on when coding
     if True:
-        #FIXME: What if message is deleted when bot is offline?
-        cursor.execute("SELECT * FROM reaction_role_messages")
-        messages = cursor.fetchall()
+        #Clean up for deleted channels
+        print("Checking channels...")
+        cursor.execute("SELECT DISTINCT channel_id FROM used_messages")
+        channel_ids = cursor.fetchall()
+        for channel_id in channel_ids:
+            channel = guild.get_channel(channel_id[0])
+            if channel == None:
+                print("Deleted channel found. Removing...")
+                remove_channel.remove_channel(guild.id, channel_id[0])
+        print("Channels ok.")
 
-        #Checks if all the roles with access level are still on the server
-        #TODO: Delete all reaction roles connected
+        #Clean up for deleted roles
+        #FIXME: Delete all reaction roles connected
         cursor.execute("SELECT role_id FROM access_level")
         access_roles = cursor.fetchall()
         guild_roles = guild.roles
-        is_found = False
+        
         for access_role in access_roles:
             is_found = False
             for guild_role in guild_roles:
@@ -103,7 +105,31 @@ def clean_up(guild, is_experimental):
                 print("Deleted role found! Role deleted from access level table.")
                 cursor.execute("DELETE FROM access_level WHERE role_id='"+str(access_role[0])+"'")
 
+        db.commit()
+        db.close()
+        return
+
+        #FIXME: What if message is deleted when bot is offline?
+        cursor.execute("SELECT * FROM reaction_role_messages")
+        messages = cursor.fetchall()
+
         #FIXME: Clean up for embedded_messages
+        cursor.execute("SELECT * FROM embedded_messages")
+        embedded_messages = cursor.fetchall()
+        for embedded_message in embedded_messages:
+            embed_is_found = False
+            sent_is_found = False
+
+            for guild_channel in guild.channels:
+                if embedded_message[1] == guild_channel.id:
+                    embed_is_found = True
+                if embedded_message[3] == guild_channel.id:
+                    sent_is_found = True
+                if embed_is_found and sent_is_found:
+                    break
+            if not(embed_is_found) and not(sent_is_found):
+                print("Deleted channel found")
+
     print("Clean up done!")
     db.commit()
     db.close()

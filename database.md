@@ -4,7 +4,8 @@ In the .db file there will always bee following tables:
     'active_messages'           ({name}, active_channel_id, active_message_id)
     'reaction_role_messages'    ({message_id}, channel_id)
     'embedded_messages'         ({embed_message_id}, embed_channel_id, sent_message_id, sent_channel_id)
-    'access_level'               ({role_id}, is_admin,is_trusted)
+    'access_level'              ({role_id}, is_admin,is_trusted)
+    'used_messages'             ({message_id}, channel_id, in_table, is_table)
 
 'active_messages'
 name    |   active_channel_id   | active_message_id
