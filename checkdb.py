@@ -1,5 +1,32 @@
+from multiprocessing import cpu_count
 import sqlite3
 import os
+from timeit import default_timer as timer
+
+from on_delete import guild_deleted
+
+def checkdb(client, is_experimental):
+    print("Checking for deleted guilds...")
+    files = os.listdir("databases/")
+    guilds = client.guilds
+    for file in files:
+        file_exists = False
+        for guild in guilds:
+            if str(guild.id)+".db" == file:
+                file_exists = True
+                break
+        if not(file_exists):
+            print("Non existing server found and removed.")
+            os.remove("databases/"+file)
+    print("Deleted guilds ok!")
+
+    for guild in client.guilds:
+        print("----------------------------------------")
+        start = timer()
+        check_tables(guild)
+        clean_up(guild, is_experimental)
+        end = timer()
+        print("Elapsed time: "+str(end-start))
 
 def check_db_folder():
     if not(os.path.isdir("./databases")):
@@ -11,7 +38,7 @@ def check_tables(guild):
     db = sqlite3.connect(dbname)
     cursor = db.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS active_messages (
-        name text NOT NULL PRIMARY KEY,
+        name text PRIMARY KEY,
         active_channel_id integer,
         active_message_id integer
     )""")
@@ -34,12 +61,14 @@ def check_tables(guild):
     db.commit()
     db.close()
 
-async def clean_up(guild, is_experimental):
+
+def clean_up(guild, is_experimental):
     dbname = "databases/"+str(guild.id)+".db"
     db = sqlite3.connect(dbname)
     cursor = db.cursor()
 
     print("Clean up started...")
+
     #Clean up for reaction_role_messages
     cursor.execute("SELECT * FROM reaction_role_messages")
     messages = cursor.fetchall()
@@ -52,11 +81,29 @@ async def clean_up(guild, is_experimental):
             print("No channel found, all messages removed from this channel.")
     #Put here all time consuming clean ups that will be run in the production version.
     #These are not needed on when coding
-    if not(is_experimental):
-        pass #FIXME: What if message is deleted when bot is offline?
-    #FIXME: clean up for access levels. When role is removed.
-    #FIXME: Clean up for embedded_messages
-    #FIXME: Clean up for guilds that have been deleted while offline
+    if True:
+        #FIXME: What if message is deleted when bot is offline?
+        cursor.execute("SELECT * FROM reaction_role_messages")
+        messages = cursor.fetchall()
+
+        #Checks if all the roles with access level are still on the server
+        #TODO: Delete all reaction roles connected
+        cursor.execute("SELECT role_id FROM access_level")
+        access_roles = cursor.fetchall()
+        guild_roles = guild.roles
+        is_found = False
+        for access_role in access_roles:
+            is_found = False
+            for guild_role in guild_roles:
+                if access_role[0] == guild_role.id:
+                    is_found = True
+                    break
+            print(str(is_found))
+            if not(is_found):
+                print("Deleted role found! Role deleted from access level table.")
+                cursor.execute("DELETE FROM access_level WHERE role_id='"+str(access_role[0])+"'")
+
+        #FIXME: Clean up for embedded_messages
     print("Clean up done!")
     db.commit()
     db.close()

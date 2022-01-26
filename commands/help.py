@@ -1,4 +1,3 @@
-from pickle import TRUE
 import discord
 
 #TODO: Change the descriptions to be read from a file
@@ -70,7 +69,7 @@ async def help_roles(message):
                 "inline":True
             },
             {
-                "name":"messages",
+                "name":"list",
                 "value":"Gives a list of messages that have reaction role or roles.",
                 "inline":True
             }

@@ -1,13 +1,14 @@
-from ast import Global
-import access
-from pyexpat.errors import messages
+import commands.access as access
 import sqlite3
 import discord
 from decouple import config
+from timeit import default_timer as timer
 
-import help
-from roles import Roles
-import messages
+import commands.help
+from commands.roles import Roles
+import commands.embed as embed
+import commands.access as access
+import on_delete
 import checkdb
 import authorization
 
@@ -23,10 +24,10 @@ checkdb.check_db_folder()
 
 @client.event
 async def on_ready():
+    global is_experimental
     #checks if the bot is experimental version.
     print("Checking for experimental...")
     if client.user.id == 932540671988998234: #Replace this with bot id that is the experimental bot
-        global is_experimental
         is_experimental = True
         global command_key
         command_key = "?"
@@ -37,12 +38,12 @@ async def on_ready():
     
     #Check and set up the databases
     print("Checking databases...")
-    for guild in client.guilds:
-        print("----------------------------------------")
-        checkdb.check_tables(guild)
-        await checkdb.clean_up(guild, is_experimental)
-
+    start = timer()
+    checkdb.checkdb(client, is_experimental)
+    end = timer()
+    print("=========================================================")
     print("All databases ok!")
+    print("Total elapsed time: "+str(end-start))
     print("=========================================================")
 
     
@@ -58,7 +59,7 @@ async def on_message(message):
         return
 
     if message.content.startswith(command_key+"help"):
-        await help.help(message)
+        await commands.help.help(message)
         return
 
     if message.content.startswith(command_key+"roles"):
@@ -67,7 +68,7 @@ async def on_message(message):
         return
 
     if message.content.startswith(command_key+"embed"):
-        await messages.embed(message)
+        await embed.embed(message)
         return
     if message.content.startswith(command_key+"access"):
         if authorization.authorize(message, "owner"):
@@ -95,8 +96,20 @@ async def on_message(message):
         db.close()
 
 @client.event
+async def on_guild_remove(guild):
+    on_delete.guild_deleted(guild)
+
+@client.event
+async def on_guild_channel_delete(channel):
+    on_delete.channel_deleted(channel)
+
+@client.event
 async def on_raw_message_delete(payload):
-    messages.message_deleted(payload)
+    on_delete.message_deleted(payload)
+
+@client.event
+async def on_guild_role_delete(role):
+    on_delete.role_deleted(role)
 
 @client.event
 async def on_raw_reaction_add(payload):

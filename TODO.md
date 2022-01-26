@@ -1,6 +1,3 @@
-#FIXME: Tier system for accessing commands.
-        Add this soon.
-
 #FIXME: Improve !embed
         Make !embed to save the message from which it was created and what was created
         so that it is possible to modify the embedded message by editing the original

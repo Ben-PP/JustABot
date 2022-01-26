@@ -1,5 +1,5 @@
 import sqlite3
-import help
+import commands.help as help
 
 #Everything related to role creating with the bot.
 

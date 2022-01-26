@@ -1,5 +1,5 @@
 import sqlite3
-import help
+import commands.help as help
 
 async def access(message):
     message_splitted = message.content.split(" ")
