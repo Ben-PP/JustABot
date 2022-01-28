@@ -15,6 +15,7 @@ class Roles:
         #Checks if the db is used by another command and waits for it to finnish
         dbname = "databases/"+str(+message.guild.id)+".db"
         Roles.db = sqlite3.connect(dbname)
+        Roles.db.execute("PRAGMA foreign_keys=ON")
         Roles.cursor = Roles.db.cursor()
 
         message_splitted = message.content.split(" ")
@@ -113,30 +114,25 @@ class Roles:
 
         message_id = str(active_message.id)
 
-        #Adds the role to this reaction on this message if the emoji is not on the message allready.
-        Roles.cursor.execute("CREATE TABLE IF NOT EXISTS '"+ message_id +"' (emoji text, role_id integer, channel_id integer)")
-
         #Checks if the emoji is allready connected to a role in this message.
-        Roles.cursor.execute("SELECT * FROM '"+message_id+"' WHERE emoji = '"+used_emoji+"'")
+        Roles.cursor.execute("""SELECT * FROM reaction_role_messages WHERE
+            message_id='"""+message_id+"""' AND
+            emoji='"""+used_emoji+"""'
+        """)
         items = Roles.cursor.fetchall()
         if len(items) >= 1:
             await message.channel.send("This reaction allready has a role attached to it. Please choose another reaction or delete the old one.")
             return
 
-        Roles.cursor.execute("INSERT INTO '"+message_id+"' VALUES ('"+used_emoji+"',"+str(role_id)+","+str(active_message.id)+")")
-        Roles.cursor.execute("""INSERT OR REPLACE INTO reaction_role_messages (
+        Roles.cursor.execute("""INSERT INTO reaction_role_messages (
             message_id,
-            channel_id)VALUES(
-                """+message_id+""",
-                """+str(active_channel.id)+"""
-            )
-        """)
-        #Adds the message, channel and other info to table for dbcheck.
-        Roles.cursor.execute("""INSERT OR REPLACE INTO used_messages (
-            message_id,
-            channel_id)VALUES(
-                """+message_id+""",
-                """+str(active_channel.id)+"""
+            emoji,
+            channel_id,
+            role_id)VALUES(
+                '"""+message_id+"""',
+                '"""+used_emoji+"""',
+                '"""+str(active_channel.id)+"""',
+                '"""+str(role.id)+"""'
             )""")
         try:
             await message.channel.send("Succesfully added "+used_emoji+" with role <@&"+str(role_id)+"> to message: "+message_id, reference=active_message)
@@ -183,25 +179,19 @@ class Roles:
             return
 
         message_id = str(active_message.id)
-        Roles.cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='"+str(message_id)+"'")
+        Roles.cursor.execute("SELECT * FROM reaction_role_messages WHERE message_id='"+message_id+"' AND emoji='"+used_emoji+"'")
         table = Roles.cursor.fetchone()
         if table == None:
             try:
-                await message.channel.send("No reaction roles has been set to the message: "+message_id, reference=active_message)
+                await message.channel.send("No "+used_emoji+" reaction roles has been set to the message: "+message_id, reference=active_message)
             except:
-                await message.channel.send("No reaction roles has been set to the message: "+ active_message.jump_url)
+                await message.channel.send("No "+used_emoji+" reaction roles has been set to the message: "+ active_message.jump_url)
             return
         #Removes reaction from the database.
-        Roles.cursor.execute("DELETE FROM '"+message_id+"' WHERE emoji='"+used_emoji+"'")
-        Roles.cursor.execute("SELECT * FROM '"+message_id+"'")
-        #If last reaction from the message is removed, drop the table for that message.
-        messages = Roles.cursor.fetchall()
-        if len(messages) < 1:
-            Roles.cursor.execute("DROP TABLE '"+message_id+"'")
-            Roles.cursor.execute("DELETE FROM reaction_role_messages WHERE message_id='"+message_id+"'")
-            Roles.cursor.execute("SELECT * FROM embedded_messages WHERE embed_message_id='"+str(message_id)+"' or sent_message_id='"+str(message_id)+"'")
-            if len(Roles.cursor.fetchall()) < 1:
-                Roles.cursor.execute("DELETE FROM used_messages WHERE message_id='"+message_id+"'")
+        Roles.cursor.execute("""DELETE FROM reaction_role_messages WHERE 
+            message_id='"""+message_id+"""' AND
+            emoji='"""+used_emoji+"""'
+        """)
 
     #Sets the active channel and message for !roles commands to the database.
     async def set_channel_message(message, message_splitted):
@@ -248,19 +238,18 @@ class Roles:
 
         message_id = str(payload.message_id)
         used_emoji = str(payload.emoji)
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='"+message_id+"'")
-        if len(cursor.fetchall()) < 1:
-            db.commit()
-            db.close()
-            return
-        cursor.execute("SELECT * FROM '"+message_id+"' WHERE emoji='"+used_emoji+"'")
+        #Check if the message has any reaction roles
+        cursor.execute("""SELECT * FROM reaction_role_messages WHERE
+            message_id='"""+message_id+"""' AND
+            emoji='"""+used_emoji+"""'
+        """)
         items = cursor.fetchone()
-        if items == None or len(items) < 1:
+        if items == None:
             db.commit()
             db.close()
             return
 
-        role_id = items[1]
+        role_id = items[3]
 
         guild = client.get_guild(payload.guild_id)
         user = guild.get_member(payload.user_id)
@@ -268,20 +257,7 @@ class Roles:
         if role != None:
             await user.add_roles(role)
         else:
-            #Deletes the reaction role from database if the role does not exist.
-            cursor.execute("DELETE FROM '"+str(payload.message_id)+"' WHERE emoji='"+str(payload.emoji)+"'")
-            cursor.execute("SELECT * FROM '"+str(payload.message_id)+"'")
-            messages = cursor.fetchall()
-            if len(messages) < 1:
-                #If its the last reaction in the message
-                cursor.execute("DROP TABLE '"+str(payload.message_id)+"'")
-                cursor.execute("DELETE FROM reaction_role_messages WHERE message_id='"+str(payload.message_id)+"'")
-                cursor.execute("DELETE FROM used_messages WHERE message_id='"+str(payload.message_id)+"'")
-            print("---------------------------------------")
-            print("Role does not exist anymore. Reaction role deleted from the message.")
-            channel = guild.get_channel(payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
-            await message.clear_reaction(used_emoji)
+            print("Role not found!")
 
         db.commit()
         db.close()
@@ -294,19 +270,18 @@ class Roles:
 
         message_id = str(payload.message_id)
         used_emoji = str(payload.emoji)
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='"+message_id+"'")
-        if len(cursor.fetchall()) < 1:
-            db.commit()
-            db.close()
-            return
-        cursor.execute("SELECT * FROM '"+message_id+"' WHERE emoji='"+used_emoji+"'")
+        #Check if the message has any reaction roles
+        cursor.execute("""SELECT * FROM reaction_role_messages WHERE
+            message_id='"""+message_id+"""' AND
+            emoji='"""+used_emoji+"""'
+        """)
         items = cursor.fetchone()
-        if items == None or len(items) < 1:
+        if items == None:
             db.commit()
             db.close()
             return
 
-        role_id = items[1]
+        role_id = items[3]
 
         guild = client.get_guild(payload.guild_id)
         user = guild.get_member(payload.user_id)
@@ -314,21 +289,7 @@ class Roles:
         if role != None:
             await user.remove_roles(role)
         else:
-            #If the role does not exist anymore, this removes it from the database
-            cursor.execute("DELETE FROM '"+str(payload.message_id)+"'WHERE emoji='"+str(payload.emoji)+"'")
-            cursor.execute("SELECT * FROM '"+str(payload.message_id)+"'")
-            messages = cursor.fetchall()
-            if len(messages) < 1:
-                #If its the last reaction in the message
-                cursor.execute("DROP TABLE '"+str(payload.message_id)+"'")
-                cursor.execute("DELETE FROM reaction_role_messages WHERE message_id='"+str(payload.message_id)+"'")
-                cursor.execute("DELETE FROM used_messages WHERE message_id='"+str(payload.message_id)+"'")
-
-            print("-----------------------------------")
-            print("Role does not exist anymore. Reaction role deleted from the message.")
-            channel = guild.get_channel(payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
-            await message.clear_reaction(used_emoji)
+            print("Role not found!")
 
         db.commit()
         db.close()

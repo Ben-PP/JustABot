@@ -49,6 +49,7 @@ async def send_embed(message, message_splitted, is_saved):
     if is_saved:
         dbname = "databases/"+str(message.guild.id)+".db"
         db = sqlite3.connect(dbname)
+        db.execute("PRAGMA foreign_keys=ON")
         cursor = db.cursor()
 
         cursor.execute("""INSERT INTO embedded_messages (
@@ -62,11 +63,6 @@ async def send_embed(message, message_splitted, is_saved):
                   """+str(message.id)+""",
                   """+str(message.channel.id)+"""
               )""")
-        used_info = [
-            (sent_message.id, sent_message.channel.id),
-            (message.id, message.channel.id)
-        ]
-        cursor.executemany("INSERT INTO used_messages VALUES (?,?)", used_info)
 
         db.commit()
         db.close()

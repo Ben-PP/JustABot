@@ -3,14 +3,17 @@ import sqlite3
 import discord
 from decouple import config
 from timeit import default_timer as timer
+import os
 
 import commands.help
 from commands.roles import Roles
 import commands.embed as embed
 import commands.access as access
-import on_delete
 import checkdb
 import authorization
+import database.message_operations as message_operations
+import database.channel_operations as channel_operations
+import database.role_operations as role_operations
 
 intents = discord.Intents.default()
 intents.members = True
@@ -48,8 +51,7 @@ async def on_ready():
 
     
 
-    print('we have logged in as {0.user}'.format(client))
-    #Check for any messages that do not exist anymore.
+    print('Logged in as {0.user}'.format(client))
 
 #Listens on events on the server.
 @client.event
@@ -96,20 +98,31 @@ async def on_message(message):
 
 @client.event
 async def on_guild_remove(guild):
-    on_delete.guild_deleted(guild)
+    if os.path.exists("databases/"+guild.id+".db"):
+        os.remove("databases/"+guild.id+".db")
 
+#When channel is created or deleted.
 @client.event
 async def on_guild_channel_delete(channel):
-    on_delete.channel_deleted(channel)
+    channel_operations.remove_channel(channel)
+@client.event
+async def on_guild_channel_create(channel):
+    channel_operations.add_channel(channel)
 
+#When message is deleted.
 @client.event
 async def on_raw_message_delete(payload):
-    on_delete.message_deleted(payload)
+    message_operations.remove_message(payload)
 
+#When role is created or deleted.
 @client.event
 async def on_guild_role_delete(role):
-    on_delete.role_deleted(role)
+    role_operations.remove_role(role)
+@client.event
+async def on_guild_role_create(role):
+    role_operations.add_role(role)
 
+#When reaction is added or removed.
 @client.event
 async def on_raw_reaction_add(payload):
     bot_id = client.user.id

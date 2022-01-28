@@ -41,6 +41,7 @@ async def add(message, message_splitted):
     #Adding to database
     dbname = "databases/"+str(message.guild.id)+".db"
     db = sqlite3.connect(dbname)
+    db.execute("PRAGMA foreign_keys=ON")
     cursor = db.cursor()
     
     if message_splitted[3] == "admin":
@@ -86,6 +87,7 @@ async def remove(message, message_splitted):
     #Removing from database
     dbname = "databases/"+str(message.guild.id)+".db"
     db = sqlite3.connect(dbname)
+    db.execute("PRAGMA foreign_keys=ON")
     cursor = db.cursor()
     
     cursor.execute("SELECT * FROM access_level WHERE role_id='"+str(role_id)+"'")
@@ -95,6 +97,7 @@ async def remove(message, message_splitted):
     
     cursor.execute("DELETE FROM access_level WHERE role_id='"+str(role_id)+"'")
 
+    #Respond according to what type of access level the role had.
     if role[1] == "True":
         await message.channel.send("<@&"+str(role_id)+"> Went on a trip too far and no more has **admin** access.")
     else:
