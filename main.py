@@ -80,21 +80,23 @@ async def on_message(message):
             print("Is trusted")
         else:
             print("Is not trusted")
-    if is_experimental and message.content.startswith(command_key+"print"):
-        db = sqlite3.connect("databases/"+str(message.guild.id)+".db")
-        cursor = db.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables = cursor.fetchall()
-        print("Tables in the database")
-        print("======================================")
-        print(str(tables))
-        print("======================================")
-        for table in tables:
-            print(str(table[0]))
-            cursor.execute("SELECT * FROM '"+table[0]+"'")
-            print(cursor.fetchall())
-            print("________________________________")
-        db.close()
+
+    if message.content.startswith(command_key+"print"):
+        if authorization.authorize(message, "admin"):
+            db = sqlite3.connect("databases/"+str(message.guild.id)+".db")
+            cursor = db.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = cursor.fetchall()
+            print("Tables in the database")
+            print("======================================")
+            print(str(tables))
+            print("======================================")
+            for table in tables:
+                print(str(table[0]))
+                cursor.execute("SELECT * FROM '"+table[0]+"'")
+                print(cursor.fetchall())
+                print("________________________________")
+            db.close()
 
 @client.event
 async def on_guild_remove(guild):
