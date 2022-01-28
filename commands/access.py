@@ -65,7 +65,7 @@ async def add(message, message_splitted):
                 'True'
             )
         """)
-        await message.channel.send("<@&"+str(role_id)+"> is now **trusted**!")
+        await message.channel.send("<@&"+str(role_id)+"> is now **trusted** definately not sus...")
     db.commit()
     db.close()
 
@@ -114,7 +114,6 @@ async def list_roles(message):
 
     cursor.execute("SELECT * FROM access_level")
     high_level_roles = cursor.fetchall()
-    print(str(high_level_roles))
     admins = list()
     admins.append("**admin roles are:**\n")
     trusted = list()

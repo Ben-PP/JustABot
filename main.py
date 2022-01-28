@@ -42,7 +42,7 @@ async def on_ready():
     #Check and set up the databases
     print("Checking databases...")
     start = timer()
-    checkdb.checkdb(client, is_experimental)
+    await checkdb.checkdb(client)
     end = timer()
     print("=========================================================")
     print("All databases ok!")
@@ -109,10 +109,13 @@ async def on_guild_channel_delete(channel):
 async def on_guild_channel_create(channel):
     channel_operations.add_channel(channel)
 
-#When message is deleted.
+#When message is deleted or edited.
 @client.event
 async def on_raw_message_delete(payload):
     message_operations.remove_message(payload)
+@client.event
+async def on_raw_message_edit(payload):
+    await embed.edit_embed(payload, client)
 
 #When role is created or deleted.
 @client.event

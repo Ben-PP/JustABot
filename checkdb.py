@@ -1,11 +1,11 @@
-from copy import deepcopy
+import discord
 import sqlite3
 import os
 from timeit import default_timer as timer
 
 import database.channel_operations as channel_operations
 
-def checkdb(client, is_experimental):
+async def checkdb(client):
     #Check for deleted guilds
     print("Checking for deleted guilds...")
     files = os.listdir("databases/")
@@ -25,7 +25,7 @@ def checkdb(client, is_experimental):
         print("----------------------------------------")
         start = timer()
         check_tables(guild)
-        clean_up(guild, is_experimental)
+        await clean_up(guild)
         end = timer()
         print("Elapsed time: "+str(end-start))
 
@@ -36,6 +36,8 @@ def check_db_folder():
 #Checks for needed tables and creates them if needed.
 def check_tables(guild):
     print("Checking tables of guild: "+str(guild.id))
+    start = timer()
+
     dbname = "databases/"+str(guild.id)+".db"
     db = sqlite3.connect(dbname)
     db.execute("PRAGMA foreign_keys=ON")
@@ -74,11 +76,10 @@ def check_tables(guild):
         is_trusted text,
         FOREIGN KEY(role_id) REFERENCES guild_roles(role_id) ON DELETE CASCADE
     )""")
+
     print("Updating tables...")
 
     #Check guild_roles.
-    start = timer()
-
     cursor.execute("SELECT * FROM guild_roles")
     saved_role_ids = cursor.fetchall()
     current_roles = guild.roles
@@ -119,13 +120,13 @@ def check_tables(guild):
             cursor.execute("INSERT INTO guild_channels (channel_id) VALUES ("+str(channel.id)+")")
 
     end = timer()
-    print("Elapsed time: "+str(end-start))
     print("Tables ok!")
+    print("Elapsed time: "+str(end-start))
     db.commit()
     db.close()
 
 
-def clean_up(guild, is_experimental):
+async def clean_up(guild):
     dbname = "databases/"+str(guild.id)+".db"
     db = sqlite3.connect(dbname)
     db.execute("PRAGMA foreign_keys=ON")
@@ -133,11 +134,64 @@ def clean_up(guild, is_experimental):
 
     print("Clean up started...")
 
-    #Put here all time consuming clean ups that will be run in the production version.
-    #These are not needed on when coding
-    if True:
-        #FIXME: Clean up for messages
-        pass
+    print("Cleaning messages...")
+    start = timer()
+
+    #reaction_role_messages
+    cursor.execute("SELECT DISTINCT message_id,channel_id FROM reaction_role_messages")
+    messages = cursor.fetchall()
+    for message in messages:
+        print("Checking reaction_role_messages...")
+        ch = guild.get_channel(message[1])
+        if ch == None:
+            print("No channel found")
+        else:
+            try:
+                msg = await ch.fetch_message(message[0])
+            except discord.NotFound:
+                cursor.execute("DELETE FROM reaction_role_messages WHERE message_id='"+str(message[0])+"'")
+                print("Message not found. Message deleted from database.")
+            except discord.HTTPException:
+                print("HTTP exception. Could not retrieve the message or messages.")
+            except:
+                pass
+
+    #embedded_messages
+    cursor.execute("SELECT * FROM embedded_messages")
+    messages = cursor.fetchall()
+    for message in messages:
+        print("Checking embedded_messages...")
+        ch = guild.get_channel(message[1])
+        if ch == None:
+            print("No channel found")
+        else:
+            try:
+                msg = await ch.fetch_message(message[0])
+            except discord.NotFound:
+                cursor.execute("DELETE FROM embedded_messages WHERE embed_message_id='"+str(message[0])+"'")
+                print("Message not found. Message deleted from database.")
+            except discord.HTTPException:
+                print("HTTP exception. Could not retrieve the message or messages.")
+            except:
+                pass
+
+        ch = guild.get_channel(message[3])
+        if ch == None:
+            print("No channel found")
+        else:
+            try:
+                msg = await ch.fetch_message(message[2])
+            except discord.NotFound:
+                cursor.execute("DELETE FROM embedded_messages WHERE sent_message_id='"+str(message[2])+"'")
+                print("Message not found. Message deleted from database.")
+            except discord.HTTPException:
+                print("HTTP exception. Could not retrieve the message or messages.")
+            except:
+                pass
+            
+
+    end = timer()
+    print("Time used to clean messages: "+str(end-start))
 
     print("Clean up done!")
     db.commit()

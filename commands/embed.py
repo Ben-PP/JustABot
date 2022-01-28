@@ -1,13 +1,12 @@
+from pyexpat.errors import messages
 import sqlite3
 import discord
 import ast
 
+from authorization import authorize
 import commands.help as help
 
-#FIXME: Make the messages sent modifiable
-#Things to make the bot send messages
-
-#Sends an embedded message from user sent message
+#Sends an embedded message from user sent message.
 async def embed(message):
     
     message_splitted = message.content.split(" ")
@@ -15,11 +14,52 @@ async def embed(message):
         await help.help_embed(message)
         return
     elif message_splitted[1] == "onetime":
-        await send_embed(message, message_splitted, False)
+        if authorize(message, "trusted"):
+            await send_embed(message, message_splitted, False)
         return
     elif message_splitted[1] == "save":
-        await send_embed(message, message_splitted, True)
+        if authorize(message,"admin"):
+            await send_embed(message, message_splitted, True)
         return
+    elif message_splitted[1] == "list":
+        if authorize(message, "trusted"):
+            await list_messages(message)
+        return
+    elif message_splitted[1] == "syntax":
+        await help.help_embed_syntax(message)
+        return
+
+#Lists all the embedded messages that are saved and can be modified.
+async def list_messages(message):
+    dbname = "databases/"+str(message.guild.id)+".db"
+    db = sqlite3.connect(dbname)
+    db.execute("PRAGMA foreign_keys=ON")
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM embedded_messages")
+    messages = cursor.fetchall()
+    if len(messages) < 1:
+        await message.channel.send("No embedded messages saved.")
+        db.commit()
+        db.close()
+        return
+    urls = []
+    await message.channel.send("Here are all the embedded messages that you can edit: \n")
+    i = 1
+    for msg in messages:
+        url = "**Embedded message "+str(i)+".** https://discord.com/channels/"+str(message.guild.id)+"/"+str(msg[1])+"/"+str(msg[0])
+        urls.append(url)
+        url = "can be edited by editing this message: "+"https://discord.com/channels/"+str(message.guild.id)+"/"+str(msg[3])+"/"+str(msg[2])
+        urls.append(url)
+        i += 1
+    if len(messages) < 5:
+        await message.channel.send("\n".join(urls))
+    else:
+        chunks = [urls[x:x+8] for x in range(0, len(urls), 8)]
+        for chunk in chunks:
+            await message.channel.send(str("\n".join(chunk)))
+    db.commit()
+    db.close()
 
 #Sends embedded message to specific channel.
 # If is_saved is True, both command message and embedded message are saved
@@ -80,3 +120,44 @@ async def send(content, channel):
         return await channel.send(embed=embed)
     except:
         return None
+
+#Allows to edit embedded message that bot has sent by editing the original message
+#from where the command was given.
+async def edit_embed(payload, client):
+    dbname = "databases/"+str(payload.guild_id)+".db"
+    db = sqlite3.connect(dbname)
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM embedded_messages WHERE sent_message_id='"+str(payload.message_id)+"'")
+    saved_embed = cursor.fetchone()
+    if saved_embed == None:
+        db.commit()
+        db.close()
+        return
+    guild = client.get_guild(payload.guild_id)
+    ch = guild.get_channel(payload.channel_id)
+    try:
+        edited_message = await ch.fetch_message(payload.message_id)
+    except:
+        print("Message could not be found.")
+    message_splitted = edited_message.content.split(" ")
+    cut_letters = len(message_splitted[0]) + len(message_splitted[1]) + len(message_splitted[2]) + 3
+    message_no_command = edited_message.content[-(len(edited_message.content)-cut_letters):]
+    try:
+        print(str(message_no_command))
+        content = ast.literal_eval(message_no_command)
+    except:
+        print("Could not read the content. Syntax error.")
+        db.commit()
+        db.close()
+        return
+    embed = discord.Embed.from_dict(content)
+    embed_channel = guild.get_channel(saved_embed[1])
+    embed_message = await embed_channel.fetch_message(saved_embed[0])
+    try:
+        await embed_message.edit(embed=embed)
+    except:
+        print("Could not edit the embed.")
+
+    db.commit()
+    db.close()

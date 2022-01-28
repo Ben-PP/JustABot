@@ -28,7 +28,7 @@ class Roles:
         elif message_splitted[1] == "set":
             await Roles.set_channel_message(message, message_splitted)
         elif message_splitted[1] == "list":
-            await Roles.show_messages(message)
+            await Roles.list_messages(message)
         else:
             await message.channel.send("Unknown command '**"+message_splitted[1]+"**'.\nType '**!roles help**' for more commands.")
 
@@ -36,20 +36,17 @@ class Roles:
         Roles.db.close() 
 
         #Sends a list of all the messages containing at least 1 reaction role
-    async def show_messages(message):
-
-        Roles.cursor.execute("SELECT * FROM reaction_role_messages")
+    async def list_messages(message):
+        Roles.cursor.execute("SELECT DISTINCT message_id,channel_id FROM reaction_role_messages")
         messages = Roles.cursor.fetchall()
         if len(messages) < 1:
             await message.channel.send("No messages with reaction roles.")
             return
         urls = []
         urls.append("Messages that have a reaction role/roles are:\n")
-        ch = None
         i = 1
         for msg in messages:
-            ch = message.guild.get_channel(msg[1])
-            url = str(i)+". https://discord.com/channels/"+str(message.guild.id)+"/"+str(ch.id)+"/"+str(msg[0])
+            url = str(i)+". https://discord.com/channels/"+str(message.guild.id)+"/"+str(msg[1])+"/"+str(msg[0])
             urls.append(url)
             i += 1
         if len(messages) < 9:
