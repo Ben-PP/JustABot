@@ -119,6 +119,7 @@ async def send(content, channel):
     try:
         return await channel.send(embed=embed)
     except:
+        #FIXME: Different prints for errors
         return None
 
 #Allows to edit embedded message that bot has sent by editing the original message

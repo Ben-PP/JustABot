@@ -173,3 +173,28 @@ async def help_access(message):
     }
     embed = discord.Embed.from_dict(content)
     await message.channel.send(embed=embed)
+
+async def help_menu(message):
+    content = {
+        "title":"Menu",
+        "description":"Gives you menu of the day from a chosen restaurant.",
+        "fields":[
+            {
+                "name":"add",
+                "value":"Adds access level to a role.\n'!access add @role admin'",
+                "inline": True
+            },
+            {
+                "name":"remove",
+                "value":"Removes access level from role.\n'!access remove @role'",
+                "inline": True
+            },
+            {
+                "name":"list",
+                "value":"Lists all the roles that have access level set.",
+                "inline":True
+            }
+        ]
+    }
+    embed = discord.Embed.from_dict(content)
+    await message.channel.send(embed=embed)

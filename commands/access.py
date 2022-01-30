@@ -65,7 +65,7 @@ async def add(message, message_splitted):
                 'True'
             )
         """)
-        await message.channel.send("<@&"+str(role_id)+"> is now **trusted** definately not sus...")
+        await message.channel.send("<@&"+str(role_id)+"> is now **trusted** definitely not sus...")
     db.commit()
     db.close()
 

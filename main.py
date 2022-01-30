@@ -5,12 +5,15 @@ from decouple import config
 from timeit import default_timer as timer
 import os
 
+import checkdb
+import authorization
+
 import commands.help
 from commands.roles import Roles
 import commands.embed as embed
 import commands.access as access
-import checkdb
-import authorization
+import commands.menu as menu
+
 import database.message_operations as message_operations
 import database.channel_operations as channel_operations
 import database.role_operations as role_operations
@@ -75,11 +78,8 @@ async def on_message(message):
         if authorization.authorize(message, "owner"):
             await access.access(message)
         return
-    if message.content.startswith(command_key+"trusted"):
-        if authorization.authorize(message, "trusted"):
-            print("Is trusted")
-        else:
-            print("Is not trusted")
+    if message.content.startswith(command_key+"menu"):
+        await menu.menu(message)
 
     if message.content.startswith(command_key+"print"):
         if authorization.authorize(message, "admin"):
