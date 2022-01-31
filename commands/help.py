@@ -10,6 +10,11 @@ async def help(message):
                 "name":"help",
                 "value":"You can add **'help'**\nto get more info\nabout any !command.",
                 "inline":True
+            },
+            {
+                "name":"!menu",
+                "value":"Helps you decide where to eat today!",
+                "inline":True
             }
         ]
     }
@@ -180,19 +185,14 @@ async def help_menu(message):
         "description":"Gives you menu of the day from a chosen restaurant.",
         "fields":[
             {
-                "name":"add",
-                "value":"Adds access level to a role.\n'!access add @role admin'",
+                "name":"Menu of the day",
+                "value":"Get the menu of the day from chosen restaurant by giving the restaurant name after '!menu'",
                 "inline": True
             },
             {
-                "name":"remove",
-                "value":"Removes access level from role.\n'!access remove @role'",
+                "name":"List",
+                "value":"Lists all of the reataurants where menu is available.",
                 "inline": True
-            },
-            {
-                "name":"list",
-                "value":"Lists all the roles that have access level set.",
-                "inline":True
             }
         ]
     }

@@ -23,7 +23,7 @@ async def add(message, message_splitted):
     if len(message_splitted) != 4:
         await message.channel.send("Incorrect ammount of arguments!")
 
-    if message_splitted[3] != "admin" and message_splitted[3] != "trusted":
+    if message_splitted[3].lower() != "admin" and message_splitted[3].lower() != "trusted":
         await message.channel.send("Please, give a valid access level. Levels are typed all lower case. For all the levels, check **!access help**")
         return
 
@@ -44,7 +44,7 @@ async def add(message, message_splitted):
     db.execute("PRAGMA foreign_keys=ON")
     cursor = db.cursor()
     
-    if message_splitted[3] == "admin":
+    if message_splitted[3].lower() == "admin":
         cursor.execute("""INSERT OR REPLACE INTO access_level (
             role_id,
             is_admin,
@@ -55,7 +55,7 @@ async def add(message, message_splitted):
             )
         """)
         await message.channel.send("<@&"+str(role_id)+"> started a power trip as **admin**!")
-    elif message_splitted[3] == "trusted":
+    elif message_splitted[3].lower() == "trusted":
         cursor.execute("""INSERT OR REPLACE INTO access_level (
             role_id,
             is_admin,

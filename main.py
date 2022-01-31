@@ -66,6 +66,10 @@ async def on_message(message):
         await commands.help.help(message)
         return
 
+    if message.content.startswith(command_key+"menu"):
+        await menu.menu(message)
+        return
+
     if message.content.startswith(command_key+"roles"):
         if authorization.authorize(message, "trusted"):
             await Roles.roles(message)
@@ -78,8 +82,6 @@ async def on_message(message):
         if authorization.authorize(message, "owner"):
             await access.access(message)
         return
-    if message.content.startswith(command_key+"menu"):
-        await menu.menu(message)
 
     if message.content.startswith(command_key+"print"):
         if authorization.authorize(message, "admin"):
