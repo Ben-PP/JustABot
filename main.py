@@ -1,3 +1,4 @@
+#Version 1.0.1
 import commands.access as access
 import sqlite3
 import discord
