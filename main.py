@@ -1,4 +1,5 @@
-#Version 1.0.1
+#Version 1.0.2
+#!menu favorites and better handling of !menu.
 import commands.access as access
 import sqlite3
 import discord

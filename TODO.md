@@ -1,3 +1,2 @@
-#TODO: Opiskelijaravintoloiden päivän menu
-#TODO: Dice roller
-#TODO: Notifications based on webscraping.
+TODO: Dice roller
+TODO: Notifications based on webscraping.

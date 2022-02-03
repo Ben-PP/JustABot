@@ -193,6 +193,11 @@ async def help_menu(message):
                 "name":"List",
                 "value":"Lists all of the reataurants where menu is available.",
                 "inline": True
+            },
+            {
+                "name":"Favorites",
+                "value":"Shows menus from all your favorite restaurants. Use **'!menu favorites add/remove/list name'** to manage your favorites. Don't give restaurant name with **list**.",
+                "inline":False
             }
         ]
     }

@@ -76,6 +76,11 @@ def check_tables(guild):
         is_trusted text,
         FOREIGN KEY(role_id) REFERENCES guild_roles(role_id) ON DELETE CASCADE
     )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS favorite_restaurants (
+        user_id integer NOT NULL,
+        restaurant_name text NOT NULL,
+        PRIMARY KEY(user_id,restaurant_name)
+    )""")
 
     print("Updating tables...")
 
@@ -133,6 +138,16 @@ async def clean_up(guild):
     cursor = db.cursor()
 
     print("Clean up started...")
+
+    print("Cleaning users...")
+    #menu favorites
+    cursor.execute("SELECT DISTINCT user_id FROM favorite_restaurants")
+    users = cursor.fetchall()
+    for user_id in users:
+        member = guild.get_member(user_id[0])
+        if member == None:
+            cursor.execute("DELETE FROM favorite_restaurants WHERE user_id="+str(user_id[0]))
+            print("User "+str(user_id[0])+" removed.")
 
     print("Cleaning messages...")
     start = timer()

@@ -12,3 +12,5 @@ In the .db file there will always bee following tables:
     'reaction_role_messages'    ({message_id, emoji}, channel_id, role_id)
 
     'embedded_messages'         ({embed_message_id}, embed_channel_id, sent_message_id, sent_channel_id)
+
+    'favorite_restaurants'      ({user_id, restaurant_name})
