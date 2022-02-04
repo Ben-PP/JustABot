@@ -143,7 +143,8 @@ async def send_menu(message, key):
     for menu_item in menu:
         data = menu_item.split(":")
         if len(data) >= 2:
-            fields.append({"name":data[0],"value":data[1],"inline":False})
+            if data[1] != "\n\n\n":
+                fields.append({"name":data[0],"value":data[1],"inline":False})
     
     content = {
         "title":title.text,
