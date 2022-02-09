@@ -75,13 +75,16 @@ async def favorites(message, message_splitted):
             except:
                 await message.channel.send("Restaurant not found. Check spelling or contact developer for adding the restaurant!")
                 return
-            cursor.execute("""INSERT OR REPLACE INTO favorite_restaurants (
-                user_id,
-                restaurant_name) VALUES (
-                    """+str(message.author.id)+""",
-                    '"""+key+"""'
-                )""")
-            await message.channel.send(message_splitted[3]+" added to your favourites!")
+            try:
+                cursor.execute("""INSERT OR REPLACE INTO favorite_restaurants (
+                    user_id,
+                    restaurant_name) VALUES (
+                        """+str(message.author.id)+""",
+                        '"""+key+"""'
+                    )""")
+                await message.channel.send(message_splitted[3]+" added to your favourites!")
+            except:
+                await message.channel.send("Failed to add restaurant to favorites. Please try again.")
             db.commit()
             db.close()
             return
